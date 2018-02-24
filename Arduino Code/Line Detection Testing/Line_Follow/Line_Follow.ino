@@ -14,16 +14,17 @@
 
 /*---------------Module Defines-----------------------------*/
 
-#define TAPE_THR         800    // For the line following detectors
+#define TAPE_THR         300    // For the line following detectors
                                 // Needs to classify gray as dark
+                                // Good value as of 02-23 : 300
 #define TALK_TIME_INTERVAL 1000000
-#define MOTOR_TIME_INTERVAL 2000
 
 #define PIN_LEFT_SWIPER         A0
 #define PIN_RIGHT_SWIPER        A1
 
 int left_swiper = 0;
 int right_swiper = 0;
+int state_id = 0;
 
 /*---------------Module Function Prototypes-----------------*/
 
@@ -59,8 +60,10 @@ void loop() {
 
 void say_stuff()
 {
-  // Useful do display stuff do debug
-  Serial.println(state);
+  // Useful do display stuff to debug
+  Serial.println(state_id); //printing a state id because printing a state won't work
+  Serial.println(left_swiper);
+  Serial.println(right_swiper);
 }
 void checkGlobalEvents(void) {
   if (TestOnTrack()) RespOnTrack();
@@ -88,11 +91,12 @@ void handleMove(void) {
 }
 
 unsigned char TestOnTrack(void) {
-  return (left_swiper<TAPE_THR & right_swiper<TAPE_THR);
+  return ((left_swiper<TAPE_THR) & (right_swiper<TAPE_THR));
 }
 
 void RespOnTrack(void) {
     state=STATE_FWD;
+    state_id=1;
 }
 
 unsigned char TestOutLeft(void) {
@@ -101,12 +105,14 @@ unsigned char TestOutLeft(void) {
 
 void RespOutLeft(void) {
     state=STATE_BTL_L;
+    state_id=2;
 }
 
 unsigned char TestOutRight(void) {
-  return (left_swiper>TAPE_THR);
+  return (right_swiper>TAPE_THR);
 }
 
 void RespOutRight(void) {
     state=STATE_BTL_R;
+    state_id=3;
 }
