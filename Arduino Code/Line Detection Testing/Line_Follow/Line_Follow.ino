@@ -5,7 +5,8 @@
   History:
   when       who      what/why
   ----       -------  ---------------------------------------------
-  2018-02-23 Pierre   First Functional Version
+  2018-02-22 Pierre   First Functional Version
+  2018-02-23 Pierre   Case switching validated
  ************************************************************/
 
 /*---------------Includes-----------------------------------*/
