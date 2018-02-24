@@ -4,8 +4,7 @@ int line_swiper =0;
 
 void setup() {
   Serial.begin(9600);
-  pinMode(A9, OUTPUT);
-  printTimer.begin(LinePrint, 1000000);
+  printTimer.begin(LinePrint, 500000);
 }
 
 void loop() {
