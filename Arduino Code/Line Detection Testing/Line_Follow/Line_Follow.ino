@@ -22,6 +22,7 @@
 
 #define PIN_LEFT_SWIPER         A0
 #define PIN_RIGHT_SWIPER        A1
+#define 
 
 int left_swiper = 0;
 int right_swiper = 0;
@@ -32,12 +33,12 @@ int state_id = 0;
 
 /*---------------State Definitions--------------------------*/
 typedef enum {
-  STATE_FWD, STATE_BCK, STATE_BTL_R, STATE_BTL_L
-} States_t;
+  STATE_FWD, STATE_BCK, STATE_BTL_R, STATE_BTL_L, STATE_STOP
+} States_m;
 // BTL = Back to line
 
 /*---------------Module Variables---------------------------*/
-States_t state;
+States_m state_m;
 IntervalTimer dispTimer;
 
 
@@ -47,7 +48,7 @@ void setup() {
   Serial.begin(9600);
   dispTimer.begin(say_stuff,TALK_TIME_INTERVAL);
   
-  state = STATE_FWD;
+  state_m = STATE_FWD;
 }
 
 void loop() {
@@ -73,7 +74,7 @@ void checkGlobalEvents(void) {
 }
 
 void handleMove(void) {
-      switch (state) {
+      switch (state_m) {
       case STATE_FWD:
           //both motors forward  
       break;
@@ -86,8 +87,11 @@ void handleMove(void) {
       case STATE_BTL_L:
            //rotate to the right
            break;
+      case STATE_STOP:
+          //motors off
+          break;
       default:    // Should never get into an unhandled state
-        Serial.println("What is this I do not even...");
+        Serial.println("Unknown state");
   }
 }
 
@@ -96,7 +100,7 @@ unsigned char TestOnTrack(void) {
 }
 
 void RespOnTrack(void) {
-    state=STATE_FWD;
+    state_m=STATE_FWD;
     state_id=1;
 }
 
@@ -105,7 +109,7 @@ unsigned char TestOutLeft(void) {
 }
 
 void RespOutLeft(void) {
-    state=STATE_BTL_L;
+    state_m=STATE_BTL_L;
     state_id=2;
 }
 
@@ -114,6 +118,6 @@ unsigned char TestOutRight(void) {
 }
 
 void RespOutRight(void) {
-    state=STATE_BTL_R;
+    state_m=STATE_BTL_R;
     state_id=3;
 }

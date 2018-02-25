@@ -18,7 +18,7 @@ void setup() {
 }
 
 void loop() {
-  line_swiper = analogRead(A0);
+  line_swiper = analogRead(A2);
 }
 
 void LinePrint(void){
