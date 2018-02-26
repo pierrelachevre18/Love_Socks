@@ -7,6 +7,7 @@
   ----       -------  ---------------------------------------------
   2018-02-22 Pierre   First Functional Version
   2018-02-23 Pierre   Case switching validated
+  2018-02-25 Pierre   This approach is obsolete, moving to P CL control
  ************************************************************/
 
 /*---------------Includes-----------------------------------*/
