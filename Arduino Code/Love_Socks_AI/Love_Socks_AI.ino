@@ -1,17 +1,11 @@
 /*************************************************************
-  File:      Line_Follow.ino
-  Contents:  Moving from a multiple state approach to a CL control one.
-             Also iterates the position
+  File:      Love_Socks_AI.ino
+  Contents:  Global code
   
   History:
   when       who      what/why
   ----       -------  ---------------------------------------------
-  2018-02-25 Pierre   File created to use CL control
-  2018-02-26 Pierre   First functional iterration
-                      Drives around, roughly follows line
-                      Position iteration not tested
-  2018-2-27  Pierre   General readability and usability improvement
-                      Added solenoid related functions
+  2018-2-27  Pierre   Created from Line_Follow_v2
  ***********************************************************/
 
 /*---------------Includes-----------------------------------*/
@@ -23,10 +17,11 @@
 #define TAPE_THR         300    // For the line following detectors
                                 // Needs to classify gray as dark
                                 // Good value as of 02-23 : 300
+#define POS_TAPE_THR     550    // Different to detect green tape too
 
-#define TALK_TIME_INTERVAL  3000000
+#define TALK_TIME_INTERVAL  2000000
 #define CTRL_INTERVAL       1000
-#define POS_INTERVAL        5000
+#define POS_INTERVAL        1000
 
 //Tape Follow
 #define PIN_LEFT_SWIPER         A0
@@ -44,13 +39,14 @@
 #define PIN_SOLENOID            7
 
 //Nominal voltage for motors, 0<V<256 (needs room for controller though!)
-int V_nom_R=75;
+int V_nom_R=90;
 int V_nom_L=90;
 
-//Inverse controller parameter
+//Controller parameters
 int Kpi=30;               // 1/proportional gain
 int Kii=0*600;              // 1/integral gain
 int Kdi=0*30;               // 1/differential gain
+int Kdis=15;                // Gain for discrete controller
 
 // Initialize variables
 int left_swiper = 0;
@@ -91,12 +87,12 @@ IntervalTimer posTimer;
 void setup() {
   //Initiate Timers
   Serial.begin(9600);
-  dispTimer.begin(say_stuff,TALK_TIME_INTERVAL);
-  tapeTimer.begin(tapeController,CTRL_INTERVAL);    //Needs to be updated at constant intervals
+  //dispTimer.begin(say_stuff,TALK_TIME_INTERVAL);
+  tapeTimer.begin(tapeControllerDis,CTRL_INTERVAL);    //Needs to be updated at constant intervals
   posTimer.begin(updatePos,POS_INTERVAL);
 
   //Initiate States
-  state_m = STATE_FWD;
+  state_m = STATE_FREE;
   state_t = STATE_OFFTAPE;
 
   //Initiate Output Pins
@@ -125,7 +121,7 @@ void loop() {
 
 void say_stuff()
 {
-  // Useful do display stuff to debug
+  //Useful do display stuff to debug
   Serial.println("Swipers");
   Serial.println(left_swiper);
   Serial.println(right_swiper);
@@ -172,7 +168,7 @@ void handleMove(void) {
   void tapeControllerDis(void) {
   // Controller for line follow, discrete version
   // Needs to return an int at most 256-V_nom
-    V_u=20*(-(right_swiper>TAPE_THR)+(left_swiper>TAPE_THR));
+    V_u=Kdis*((right_swiper>TAPE_THR)-(left_swiper>TAPE_THR));
   }
 
 // Individual motor functions
@@ -217,15 +213,21 @@ void handleMove(void) {
   //Increment position when needed
     switch (state_t) {
       case STATE_ONTAPE:
-      if (pos_swiper>TAPE_THR*1.1) {
+      if (pos_swiper>POS_TAPE_THR*1.05) {
         state_t=STATE_OFFTAPE;
         pos_id=pos_id+(dir_sign+1)/2;
+        Serial.println("Line passed");
+        Serial.println(pos_swiper);
+        Serial.println(pos_id);
       }
       break;
       case STATE_OFFTAPE:
-      if (pos_swiper<TAPE_THR*0.9){
+      if (pos_swiper<POS_TAPE_THR*0.95){
         state_t=STATE_ONTAPE;
         pos_id=pos_id+(dir_sign+1)/2;
+        Serial.println("Line reached");
+        Serial.println(pos_swiper);
+        Serial.println(pos_id);
       }
       break;
       default:
