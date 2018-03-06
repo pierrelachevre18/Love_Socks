@@ -26,6 +26,7 @@
 #define TALK_TIME_INTERVAL  2000000			//Interval between message display
 #define CTRL_INTERVAL       1000			//Interval between control value update
 #define POS_INTERVAL        1000			//Interval between position update
+#define SOLENOID_INTERVAL   500000    //Interval for solenoid 
 
 //Tape Follow
 #define PIN_RIGHT_SWIPER         A0
@@ -91,6 +92,7 @@ States_g state_g;
 IntervalTimer dispTimer;
 IntervalTimer tapeTimer;
 IntervalTimer posTimer;
+static Metro solTimer = Metro(SOLENOID_INTERVAL);
 
 
 /*---------------Main Functions----------------*/
@@ -150,6 +152,9 @@ void checkGlobalEvents(void) {
 	}
   if(state_g==STATE_PHASE3 && right_swiper>TAPE_THR) {
   state_m=STATE_FWD;
+  }
+  if (solTimer.check()){
+    closeSolenoid();
   }
 }
 
@@ -247,6 +252,7 @@ void handleMove(void) {
         Serial.println(pos_id);
         redLEDOff();
         openSolenoid();
+        solTimer.reset();
       }
       break;
       case STATE_OFFTAPE:
@@ -257,7 +263,6 @@ void handleMove(void) {
         Serial.println(pos_swiper);
         Serial.println(pos_id);
         redLEDOn();
-        closeSolenoid();
       }
       break;
       default:
