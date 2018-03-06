@@ -246,6 +246,7 @@ void handleMove(void) {
         Serial.println(pos_swiper);
         Serial.println(pos_id);
         redLEDOff();
+        openSolenoid();
       }
       break;
       case STATE_OFFTAPE:
@@ -256,6 +257,7 @@ void handleMove(void) {
         Serial.println(pos_swiper);
         Serial.println(pos_id);
         redLEDOn();
+        closeSolenoid();
       }
       break;
       default:
@@ -265,9 +267,9 @@ void handleMove(void) {
 
 /*---------Buzzword Functions---------------*/
   void openSolenoid(void){
-    digitalWrite(PIN_SOLENOID, LOW);
+    digitalWrite(PIN_SOLENOID, HIGH);
   }
 
   void closeSolenoid(void){
-    digitalWrite(PIN_SOLENOID, HIGH);
+    digitalWrite(PIN_SOLENOID, LOW);
   }
