@@ -27,6 +27,7 @@
 #define CTRL_INTERVAL       1000			//Interval between control value update
 #define POS_INTERVAL        1000			//Interval between position update
 #define SOLENOID_INTERVAL   500000      //Interval for solenoid
+#define ROTATE_INTERVAL		1000		//This one is for Metro so in ms!
 
 //Tape Follow
 #define PIN_RIGHT_SWIPER        A0
@@ -52,7 +53,7 @@
 //Nominal voltage for motors, 0<V<256 (needs room for controller though!)
 int V_nom_R=90;
 int V_nom_L=90;
-int V_nom_RT=65;        //For Turning
+int V_nom_RT=70;        //For Turning
 
 //Controller parameters
 int Kp=10;                // Gain for discrete controller
@@ -72,7 +73,7 @@ int sol_open=1;
 // State for movement
 // Free is uncontrolled for testing
 typedef enum {
-	STATE_FWD, STATE_BCK, STATE_STOP, STATE_RT, STATE_FREE
+	STATE_FWD, STATE_BCK, STATE_STOP, STATE_RT, STATE_FREE, STATE_FWD_OL
 } States_m;
 
 // State for positions
@@ -94,6 +95,7 @@ IntervalTimer dispTimer;
 IntervalTimer tapeTimer;
 IntervalTimer posTimer;
 IntervalTimer solTimer;
+static Metro rotateTimer = Metro(ROTATE_INTERVAL);
 
 /*---------------Main Functions----------------*/
 
@@ -150,7 +152,11 @@ void checkGlobalEvents(void) {
   //check for events
 	if((state_g==STATE_PHASE2) && (pos_id>=10)) {
 		state_m=STATE_RT;
+		rotateTimer.reset();
   //redLEDOn();
+	}
+	if((state_m=STATE_RT) &&(rotateTimer.check())){
+		state_m=STATE_FWD_OL;
 	}
 	if(state_g==STATE_PHASE2 && state_m==STATE_RT && right_swiper<TAPE_THR) {
 		state_g=STATE_PHASE3;
@@ -190,11 +196,12 @@ void handleMove(void) {
 		leftFwd(V_nom_L);
 		break;
 		case STATE_RT:
-		//rightBck(V_nom_RT);
-		//leftFwd(V_nom_RT);
-    rightBck(2*V_nom_RT);
-    leftBck(V_nom_RT);
+		rightBck(V_nom_RT);
+		leftFwd(V_nom_RT);
 		break;
+		case STATE_FWD_OL:
+		rightBck(V_nom_RT);
+		leftFwd(V_nom_RT);		
       default:    // Should never get into an unhandled state
       Serial.println("Unplanned Motor State");
   }
