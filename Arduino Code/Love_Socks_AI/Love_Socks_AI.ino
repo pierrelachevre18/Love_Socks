@@ -12,10 +12,6 @@
                         Corrected the giant motor miswiring	
  ***********************************************************/
 
-/*---------------Includes-----------------------------------*/
-
-#include <Metro.h>
-
 /*---------------Main constants Defines-----------------------------*/
 
 #define TAPE_THR         300    // For the line following detectors
@@ -27,8 +23,8 @@
 #define CTRL_INTERVAL       1000			//Interval between control value update
 #define POS_INTERVAL        1000			//Interval between position update
 #define SOLENOID_INTERVAL   500000      //Interval for solenoid
-#define ROTATE_INTERVAL		1000		//This one is for Metro so in ms!
-
+#define ROTATE_INTERVAL		  650000		//For the 90 deg turn
+#define ADJ_SPEED_INTERVAL  500000
 //Tape Follow
 #define PIN_RIGHT_SWIPER        A0
 #define PIN_LEFT_SWIPER        	A1
@@ -51,9 +47,9 @@
 #define PIN_BEACON              A3
 
 //Nominal voltage for motors, 0<V<256 (needs room for controller though!)
-int V_nom_R=90;
-int V_nom_L=90;
-int V_nom_RT=70;        //For Turning
+int V_nom_R=140;
+int V_nom_L=140;
+int V_nom_RT=80;        //For Turning
 
 //Controller parameters
 int Kp=10;                // Gain for discrete controller
@@ -65,6 +61,7 @@ int pos_swiper=0;
 int V_u=0;
 int dir_sign=1;
 int sol_open=1;
+unsigned long rt_start_time=0;
 
 /*---------------Module Function Prototypes-----------------*/
 
@@ -94,8 +91,7 @@ States_g state_g;
 IntervalTimer dispTimer;
 IntervalTimer tapeTimer;
 IntervalTimer posTimer;
-IntervalTimer solTimer;
-static Metro rotateTimer = Metro(ROTATE_INTERVAL);
+IntervalTimer adjTimer;
 
 /*---------------Main Functions----------------*/
 
@@ -105,7 +101,7 @@ void setup() {
   dispTimer.begin(say_stuff,TALK_TIME_INTERVAL);
   tapeTimer.begin(tapeController,CTRL_INTERVAL);    //Needs to be updated at constant intervals
   posTimer.begin(updatePos,POS_INTERVAL); 
-  //solTimer.begin(updateSol,SOLENOID_INTERVAL);
+  adjTimer.begin(adjSpeed,ADJ_SPEED_INTERVAL);
   
 
   //Initiate States
@@ -122,9 +118,7 @@ void setup() {
   pinMode(PIN_IN_R_2, OUTPUT);
   pinMode(PIN_SOLENOID,OUTPUT);
   pinMode(PIN_RED_LED,OUTPUT);
-
-  //Initiate Solenoid
-  closeSolenoid();
+  
 }
 
 void loop() {
@@ -144,26 +138,29 @@ void say_stuff()
 	//Serial.println(left_swiper);
 	//Serial.println(right_swiper);
 	//Serial.println(pos_swiper);
-	//Serial.println("Pos");
-	//Serial.println(pos_id);
+	Serial.println("Pos");
+	Serial.println(pos_id);
 	//Serial.println(state_t);
+  //Serial.println(micros());
 }
 void checkGlobalEvents(void) {
   //check for events
-	if((state_g==STATE_PHASE2) && (pos_id>=10)) {
+	if((state_g==STATE_PHASE2)&& (state_m==STATE_FWD) && (pos_id>=10)) {
 		state_m=STATE_RT;
-		rotateTimer.reset();
+		rt_start_time=micros();
+   Serial.println(rt_start_time);
   //redLEDOn();
 	}
-	if((state_m=STATE_RT) &&(rotateTimer.check())){
+	if((state_m==STATE_RT) &&((micros()-rt_start_time)>ROTATE_INTERVAL)){
+    Serial.println("All good!");
 		state_m=STATE_FWD_OL;
 	}
-	if(state_g==STATE_PHASE2 && state_m==STATE_RT && right_swiper<TAPE_THR) {
-		state_g=STATE_PHASE3;
-	}
-	if(state_g==STATE_PHASE3 && right_swiper>TAPE_THR) {
-		state_m=STATE_FWD;
-	}
+	// if(state_g==STATE_PHASE2 && state_m==STATE_RT && right_swiper<TAPE_THR) {
+	// 	state_g=STATE_PHASE3;
+	// }
+	// if(state_g==STATE_PHASE3 && right_swiper>TAPE_THR) {
+	// 	state_m=STATE_FWD;
+	// }
 }
 
 void redLEDOn(void) {
@@ -200,8 +197,9 @@ void handleMove(void) {
 		leftFwd(V_nom_RT);
 		break;
 		case STATE_FWD_OL:
-		rightBck(V_nom_RT);
-		leftFwd(V_nom_RT);		
+		rightFwd(200);
+		leftFwd(200);
+    break;		
       default:    // Should never get into an unhandled state
       Serial.println("Unplanned Motor State");
   }
@@ -249,6 +247,17 @@ void rightOff(void){
 	digitalWrite(PIN_IN_R_2,LOW);
 }
 
+void adjSpeed(void){
+  if (pos_id>=8){
+    V_nom_R=80;
+    V_nom_L=80;
+  }
+  if (pos_id<=7){
+    V_nom_R=140;
+    V_nom_L=140;
+  }  
+}
+
 /*-------Position Functions--------*/
 
 void updatePos(void){
@@ -262,7 +271,6 @@ void updatePos(void){
 			Serial.println(pos_swiper);
 			Serial.println(pos_id);
 			redLEDOff();
-      closeSolenoid(); 
 		}
 		break;
 		case STATE_OFFTAPE:
@@ -273,7 +281,6 @@ void updatePos(void){
 			Serial.println(pos_swiper);
 			Serial.println(pos_id);
 			redLEDOn();
-      openSolenoid();
 		}
 		break;
 		default:
