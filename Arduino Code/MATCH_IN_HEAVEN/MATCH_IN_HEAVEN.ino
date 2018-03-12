@@ -31,9 +31,9 @@
 #define CTRL_INTERVAL       1000			//Interval between control value update
 #define POS_INTERVAL        1000			//Interval between position update
 #define SOLENOID_INTERVAL   500000    //Interval for solenoid 
-#define ROTATE_INTERVAL      420000    //For the 90 deg turn
+#define ROTATE_INTERVAL      440000    //For the 90 deg turn
 #define ADJ_SPEED_INTERVAL  500000
-#define STOP_TIMER          1000000
+#define STOP_TIMER          500000
 
 //Tape Follow
 #define PIN_RIGHT_SWIPER         A0
@@ -58,8 +58,9 @@
 #define PIN_BEACON              A3
 
 //Nominal voltage for motors, 0<V<256 (needs room for controller though!)
-int VM_high=140;
-int VM_low=100;
+int VM_high=160;    //raised from 140
+int VM_low=85;      //lowered from 100
+int VM_top=200;     //raised from 100
 int V_nom_R=VM_high;
 int V_nom_L=VM_high;
 int V_nom_RT=80;        //For Turning
@@ -258,8 +259,8 @@ void handleMove(void) {
     leftFwd(V_nom_RT);
     break;
     case STATE_FWD_OL:
-    rightFwd(100);
-    leftFwd(100);
+    rightFwd(VM_top);
+    leftFwd(VM_top);
     break;    
       default:    // Should never get into an unhandled state
       Serial.println("Unplanned Motor State");
